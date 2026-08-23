@@ -1,0 +1,1 @@
+{"entity":"event","event":"payment.failed","payload":{"payment":{"entity":{"id":"pay_test_fail003","amount":49900,"currency":"INR","error_code":"GATEWAY_ERROR","error_description":"Payment failed due to a gateway timeout","error_reason":"gateway_error"}}},"created_at":1755000002}

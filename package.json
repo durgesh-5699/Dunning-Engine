@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev" : "tsx watch src/server.ts",
+    "consumer": "tsx watch src/queue/consumer.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
