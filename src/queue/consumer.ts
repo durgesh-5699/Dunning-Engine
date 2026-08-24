@@ -1,6 +1,8 @@
+import "../config/config.ts"
 import { redis } from "./redisClient.ts";
 import { pool } from "../db/client.ts";
 import { classifyFailure, computeNextRetry } from "../classification/classifyFailure.ts";
+import { generateRecoveryMessage } from "../ai/groqClient.ts";
 
 const STREAM_KEY = "payment-failures";
 const GROUP_NAME = "dunning-workers";
@@ -32,14 +34,24 @@ async function processMessage(fields: string[]) {
   const classification = classifyFailure(failure);
   const nextRetryAt = computeNextRetry(classification, failure.retry_count);
 
+  const { subject, body } = await generateRecoveryMessage({
+    amount_paise: failure.amount_paise,
+    currency: failure.currency,
+    classification,
+    error_description: failure.error_description,
+    next_retry_at: nextRetryAt,
+  });
+
   await pool.query(
     `UPDATE payment_failures
-     SET classification = $1, status = 'classified', next_retry_at = $2, updated_at = NOW()
-     WHERE id = $3`,
-    [classification, nextRetryAt, failureId]
+     SET classification = $1, status = 'message_ready', next_retry_at = $2,
+         recovery_subject = $3, recovery_body = $4, updated_at = NOW()
+     WHERE id = $5`,
+    [classification, nextRetryAt, subject, body, failureId]
   );
 
-  console.log(`Failure #${failureId} -> ${classification} | next retry: ${nextRetryAt ?? "none (needs customer action)"}`);
+  console.log(`Failure #${failureId} -> ${classification} | message: "${subject}"`);
+  
 }
 
 async function consumeLoop() {
@@ -75,3 +87,5 @@ async function consumeLoop() {
 }
 
 consumeLoop();
+
+  

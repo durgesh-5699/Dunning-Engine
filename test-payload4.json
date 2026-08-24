@@ -1,0 +1,1 @@
+{"entity":"event","event":"payment.failed","payload":{"payment":{"entity":{"id":"pay_test_fail005","amount":49900,"currency":"INR","error_code":"BAD_REQUEST_ERROR","error_description":"Payment failed due to insufficient funds","error_reason":"insufficient_funds"}}},"created_at":1755000005}

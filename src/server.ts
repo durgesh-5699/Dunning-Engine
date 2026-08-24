@@ -1,8 +1,6 @@
+import "./config/config.ts"
 import express from 'express'
-import dotenv from 'dotenv'
 import razorpayWebhookRouter from "./webhooks/razorpay.routes.ts";
-
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const app = express();

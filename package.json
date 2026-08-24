@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev" : "tsx watch src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "consumer": "tsx watch src/queue/consumer.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,6 +23,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "groq-sdk": "^1.5.0",
     "ioredis": "^6.0.0",
     "pg": "^8.23.0"
   }
