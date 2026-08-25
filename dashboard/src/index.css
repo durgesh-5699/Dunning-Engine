@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
+@import "tailwindcss";
+
+:root {
+  --ledger-paper: #F2E9D8;
+  --ledger-ink: #1C2321;
+  --ledger-rule: #D9CBA9;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+.font-display { font-family: 'Space Grotesk', sans-serif; }
+.font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+.ledger {
+  background: var(--ledger-paper);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+}
+
+.ledger-perforation {
+  height: 10px;
+  background-image: radial-gradient(circle, #0B0F0E 3px, transparent 3px);
+  background-size: 16px 10px;
+  background-position: center;
+}
+
+.ledger-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 24px;
+  padding: 10px 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #8A7B5C;
+  border-bottom: 1px solid var(--ledger-rule);
+}
+
+.ledger-entry-wrap { border-bottom: 1px solid var(--ledger-rule); }
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 24px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 20px;
+  color: var(--ledger-ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.ledger-row:hover { background: rgba(0,0,0,0.04); }
+
+.stamp {
+  display: inline-block;
+  width: fit-content;
+  padding: 2px 8px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  transform: rotate(-2deg);
+}
+
+.ledger-note {
+  background: rgba(0,0,0,0.03);
+  padding: 16px 20px 20px 20px;
+  border-bottom: 1px solid var(--ledger-rule);
+}
+
+.ledger-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8A7B5C;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ping { animation: none; }
+}
