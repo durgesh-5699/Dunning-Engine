@@ -6,7 +6,7 @@ import { generateRecoveryMessage } from "../ai/groqClient.ts";
 
 const STREAM_KEY = "payment-failures";
 const GROUP_NAME = "dunning-workers";
-const CONSUMER_NAME = `worker-${process.pid}`;
+const CONSUMER_NAME = "worker-1";
 
 async function ensureConsumerGroup() {
   try {
