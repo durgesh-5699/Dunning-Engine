@@ -34,7 +34,6 @@ async function processMessage(fields: string[]) {
   const classification = classifyFailure(failure);
   const nextRetryAt = computeNextRetry(classification, failure.retry_count);
 
-  // Step 1: classification turant save karo — ye kabhi Groq pe depend nahi karna chahiye
   await pool.query(
     `UPDATE payment_failures
      SET classification = $1, status = 'classified', next_retry_at = $2, updated_at = NOW()
@@ -43,7 +42,6 @@ async function processMessage(fields: string[]) {
   );
   console.log(`Failure #${failureId} classified as ${classification}`);
 
-  // Step 2: AI message alag try/catch me — fail ho to bhi classification safe rahegi
   try {
     const { subject, body } = await generateRecoveryMessage({
       amount_paise: failure.amount_paise,
@@ -62,8 +60,6 @@ async function processMessage(fields: string[]) {
     console.log(`Failure #${failureId} message ready: "${subject}"`);
   } catch (err) {
     console.error(`Failure #${failureId} classified, but AI message generation failed:`, err);
-    // Status 'classified' pe hi reh jayega — dashboard classification dikhaega,
-    // message baad me manually retry kiya ja sakta hai
   }
 }
 
