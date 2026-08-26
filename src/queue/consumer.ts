@@ -34,24 +34,37 @@ async function processMessage(fields: string[]) {
   const classification = classifyFailure(failure);
   const nextRetryAt = computeNextRetry(classification, failure.retry_count);
 
-  const { subject, body } = await generateRecoveryMessage({
-    amount_paise: failure.amount_paise,
-    currency: failure.currency,
-    classification,
-    error_description: failure.error_description,
-    next_retry_at: nextRetryAt,
-  });
-
+  // Step 1: classification turant save karo — ye kabhi Groq pe depend nahi karna chahiye
   await pool.query(
     `UPDATE payment_failures
-     SET classification = $1, status = 'message_ready', next_retry_at = $2,
-         recovery_subject = $3, recovery_body = $4, updated_at = NOW()
-     WHERE id = $5`,
-    [classification, nextRetryAt, subject, body, failureId]
+     SET classification = $1, status = 'classified', next_retry_at = $2, updated_at = NOW()
+     WHERE id = $3`,
+    [classification, nextRetryAt, failureId]
   );
+  console.log(`Failure #${failureId} classified as ${classification}`);
 
-  console.log(`Failure #${failureId} -> ${classification} | message: "${subject}"`);
-  
+  // Step 2: AI message alag try/catch me — fail ho to bhi classification safe rahegi
+  try {
+    const { subject, body } = await generateRecoveryMessage({
+      amount_paise: failure.amount_paise,
+      currency: failure.currency,
+      classification,
+      error_description: failure.error_description,
+      next_retry_at: nextRetryAt,
+    });
+
+    await pool.query(
+      `UPDATE payment_failures
+       SET status = 'message_ready', recovery_subject = $1, recovery_body = $2, updated_at = NOW()
+       WHERE id = $3`,
+      [subject, body, failureId]
+    );
+    console.log(`Failure #${failureId} message ready: "${subject}"`);
+  } catch (err) {
+    console.error(`Failure #${failureId} classified, but AI message generation failed:`, err);
+    // Status 'classified' pe hi reh jayega — dashboard classification dikhaega,
+    // message baad me manually retry kiya ja sakta hai
+  }
 }
 
 async function consumeLoop() {

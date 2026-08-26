@@ -34,21 +34,22 @@ Guidance by type:
 Respond ONLY with a JSON object in this exact shape: {"subject": "...", "body": "..."}`;
 
   const response = await groq.chat.completions.create({
-    model: "openai/gpt-oss-20b",
-    messages: [{ role: "user", content: prompt }],
-    max_completion_tokens: 400,
-    response_format: { type: "json_object" },
-  });
+  model: "openai/gpt-oss-20b",
+  messages: [{ role: "user", content: prompt }],
+  max_completion_tokens: 1024,
+  reasoning_effort: "low",
+});
 
-  const raw = response.choices[0]?.message?.content ?? "{}";
+const raw = response.choices[0]?.message?.content?.trim() ?? "";
+const cleaned = raw.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
 
-  try {
-    return JSON.parse(raw);
-  } catch {
-    console.error("Groq response wasn't valid JSON:", raw);
-    return {
-      subject: "Action needed on your subscription payment",
-      body: "We had trouble processing your last payment. Please check your payment details.",
-    };
-  }
+try {
+  return JSON.parse(cleaned);
+} catch {
+  console.error("Groq response wasn't valid JSON:", raw);
+  return {
+    subject: "Action needed on your subscription payment",
+    body: "We had trouble processing your last payment. Please check your payment details.",
+  };
+}
 }

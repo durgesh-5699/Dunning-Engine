@@ -24,10 +24,10 @@ app.get("/health",(req,res)=>{
     })
 });
 
-app.post("/webhooks/razorpay", (req, res) => {
-    console.log("📩 Webhook received:", JSON.stringify(req.body, null, 2));
-    res.sendStatus(200);
-});
+// app.post("/webhooks/razorpay", (req, res) => {
+//     console.log("📩 Webhook received:", JSON.stringify(req.body, null, 2));
+//     res.sendStatus(200);
+// });
 
 app.use("/webhooks",razorpayWebhookRouter);
 app.use("/api",failuresRouter)
