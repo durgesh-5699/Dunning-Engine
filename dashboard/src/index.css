@@ -65,3 +65,35 @@ body {
   font-size: 16px;
   font-weight: 700;
 }
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #F1F3F7 25%, #E8ECF2 37%, #F1F3F7 63%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 8px;
+}
+
+.card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 12px rgba(12,38,81,0.06), 0 16px 32px -16px rgba(12,38,81,0.14);
+  transform: translateY(-2px);
+}
+.nav-item {
+  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+.nav-item:hover:not(.nav-active) {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.9) !important;
+}
+input.search-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(13,148,251,0.12);
+}
