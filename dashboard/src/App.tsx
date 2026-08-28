@@ -15,37 +15,42 @@ interface Failure {
 }
 
 const CLASS_LABEL: Record<string, string> = {
-  hard_decline: "HARD DECLINE",
-  soft_decline: "SOFT DECLINE",
-  technical_glitch: "TECHNICAL",
-  unknown: "UNCLASSIFIED",
+  hard_decline: "Hard decline",
+  soft_decline: "Soft decline",
+  technical_glitch: "Technical",
+  unknown: "Unclassified",
 };
 
-const STAMP_COLOR: Record<string, string> = {
-  hard_decline: "border-[#A63A2E] text-[#A63A2E]",
-  soft_decline: "border-[#95690F] text-[#95690F]",
-  technical_glitch: "border-[#1F7A5C] text-[#1F7A5C]",
-  unknown: "border-[#7A6F5C] text-[#7A6F5C]",
+const PILL_STYLE: Record<string, { bg: string; color: string }> = {
+  hard_decline: { bg: "var(--danger-bg)", color: "var(--danger)" },
+  soft_decline: { bg: "var(--warning-bg)", color: "var(--warning)" },
+  technical_glitch: { bg: "#E8F1FE", color: "var(--blue)" },
+  unknown: { bg: "#F1F3F7", color: "var(--text-muted)" },
 };
 
 function formatAmount(paise: number, currency: string) {
   return `${currency === "INR" ? "₹" : currency + " "}${(paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 }
 
+const NAV_ITEMS = [
+  { icon: "▦", label: "Overview", active: false },
+  { icon: "↻", label: "Recovery Queue", active: true },
+  { icon: "⚙", label: "Settings", active: false },
+];
+
 export default function App() {
   const [failures, setFailures] = useState<Failure[]>([]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastSync, setLastSync] = useState<string>("");
+  const [lastSync, setLastSync] = useState("");
 
   async function fetchFailures() {
     try {
       const res = await fetch("http://localhost:3000/api/failures");
-      const data = await res.json();
-      setFailures(data);
+      setFailures(await res.json());
       setLastSync(new Date().toLocaleTimeString());
     } catch (err) {
-      console.error("Failed to fetch failures:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -53,97 +58,121 @@ export default function App() {
 
   useEffect(() => {
     fetchFailures();
-    const interval = setInterval(fetchFailures, 10000);
-    return () => clearInterval(interval);
+    const t = setInterval(fetchFailures, 10000);
+    return () => clearInterval(t);
   }, []);
 
-  const totalAtRisk = failures.reduce((sum, f) => sum + f.amount_paise, 0);
-  const retryQueue = failures.filter(
-    (f) => f.classification === "soft_decline" || f.classification === "technical_glitch"
-  ).length;
+  const totalAtRisk = failures.reduce((s, f) => s + f.amount_paise, 0);
+  const retryQueue = failures.filter((f) => f.classification === "soft_decline" || f.classification === "technical_glitch").length;
   const needsAction = failures.filter((f) => f.classification === "hard_decline").length;
 
+  const stats = [
+    { label: "Amount at risk", value: formatAmount(totalAtRisk, "INR"), icon: "₹", color: "var(--navy)", bg: "#EAF0F8" },
+    { label: "Total failures", value: String(failures.length), icon: "!", color: "var(--blue)", bg: "#E8F1FE" },
+    { label: "In retry queue", value: String(retryQueue), icon: "↻", color: "var(--warning)", bg: "var(--warning-bg)" },
+    { label: "Needs action", value: String(needsAction), icon: "✕", color: "var(--danger)", bg: "var(--danger-bg)" },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0B0F0E] text-[#E7ECEA]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <header className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ADE9C] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#4ADE9C]"></span>
-          </span>
-          <h1 className="font-display text-lg tracking-tight">Smart Dunning Engine</h1>
-        </div>
-        <div className="font-mono text-xs text-[#6B7873]">
-          {lastSync ? `last sync ${lastSync}` : "connecting…"}
-        </div>
-      </header>
-
-      <section className="grid grid-cols-2 md:grid-cols-4 border-b border-white/10">
-        <Stat label="AT RISK" value={formatAmount(totalAtRisk, "INR")} color="#FF6B5E" />
-        <Stat label="FAILURES" value={String(failures.length)} color="#E7ECEA" />
-        <Stat label="RETRY QUEUE" value={String(retryQueue)} color="#F2B84B" />
-        <Stat label="NEEDS ACTION" value={String(needsAction)} color="#FF6B5E" />
-      </section>
-
-      <main className="p-6 max-w-4xl mx-auto">
-        <div className="ledger">
-          <div className="ledger-perforation" />
-          <div className="ledger-header">
-            <span>PAYMENT ID</span>
-            <span>AMOUNT</span>
-            <span>STATUS</span>
-            <span></span>
+    <div className="min-h-screen flex" style={{ background: "var(--bg)" }}>
+      {/* Sidebar */}
+      <aside className="w-56 shrink-0 flex flex-col" style={{ background: "var(--navy)" }}>
+        <div className="px-5 py-5 flex items-center gap-2.5 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+          <div style={{ width: 26, height: 26, borderRadius: 7, background: "var(--blue)" }} className="flex items-center justify-center">
+            <span style={{ color: "var(--navy)", fontWeight: 800, fontSize: 14 }}>r</span>
           </div>
-          {loading ? (
-            <div className="ledger-empty">Reading ledger…</div>
-          ) : failures.length === 0 ? (
-            <div className="ledger-empty">No failures recorded. All clear.</div>
-          ) : (
-            failures.map((f) => (
-              <div key={f.id} className="ledger-entry-wrap">
-                <button className="ledger-row" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
-                  <span className="font-mono text-sm">{f.razorpay_payment_id}</span>
-                  <span className="font-mono text-sm">{formatAmount(f.amount_paise, f.currency)}</span>
-                  <span className={`stamp ${STAMP_COLOR[f.classification ?? "unknown"]}`}>
-                    {CLASS_LABEL[f.classification ?? "unknown"]}
-                  </span>
-                  <span className="text-[#6B7873]">{expanded === f.id ? "−" : "›"}</span>
-                </button>
-                {expanded === f.id && (
-                  <div className="ledger-note">
-                    {f.recovery_subject ? (
-                      <>
-                        <div className="font-display text-sm mb-1" style={{ color: "var(--ledger-ink)" }}>
-                          {f.recovery_subject}
-                        </div>
-                        <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "#3A322A" }}>
-                          {f.recovery_body}
-                        </p>
-                        {f.next_retry_at && (
-                          <div className="mt-3 font-mono text-xs" style={{ color: "#8A7B5C" }}>
-                            next retry: {new Date(f.next_retry_at).toDateString()}
-                          </div>
+          <span className="text-white text-sm font-semibold">Dunning Engine</span>
+        </div>
+        <nav className="flex-1 px-3 py-4">
+          {NAV_ITEMS.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm"
+              style={{
+                background: item.active ? "rgba(13,148,251,0.15)" : "transparent",
+                color: item.active ? "var(--blue)" : "rgba(255,255,255,0.65)",
+                fontWeight: item.active ? 600 : 400,
+              }}
+            >
+              <span style={{ width: 16, textAlign: "center" }}>{item.icon}</span>
+              {item.label}
+            </div>
+          ))}
+        </nav>
+        <div className="px-5 py-4 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+          <div className="flex items-center gap-2">
+            <span style={{ width: 7, height: 7, borderRadius: 999, background: "#3ECF8E" }} />
+            <span className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>Test Mode</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1">
+        <header className="bg-white border-b px-8 py-4 flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
+          <h1 className="text-base font-semibold" style={{ color: "var(--navy)" }}>Recovery Queue</h1>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {lastSync ? `Synced ${lastSync}` : "Connecting…"}
+          </span>
+        </header>
+
+        <main className="px-8 py-8 max-w-5xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {stats.map((s) => (
+              <div key={s.label} className="card p-5">
+                <div className="stat-icon mb-3" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
+                <div className="text-2xl font-semibold" style={{ color: "var(--navy)" }}>{s.value}</div>
+                <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card overflow-hidden">
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--navy)" }}>Failed payments</h2>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>{failures.length} entries</span>
+            </div>
+
+            {loading ? (
+              <div className="px-6 py-12 text-center text-sm" style={{ color: "var(--text-muted)" }}>Loading…</div>
+            ) : failures.length === 0 ? (
+              <div className="px-6 py-12 text-center text-sm" style={{ color: "var(--text-muted)" }}>No failures recorded. All clear.</div>
+            ) : (
+              failures.map((f) => {
+                const cls = f.classification ?? "unknown";
+                const style = PILL_STYLE[cls];
+                return (
+                  <div key={f.id}>
+                    <button className="table-row" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
+                      <span className="text-sm font-medium" style={{ color: "var(--navy)" }}>{f.razorpay_payment_id}</span>
+                      <span className="text-sm" style={{ color: "var(--text)" }}>{formatAmount(f.amount_paise, f.currency)}</span>
+                      <span className="pill w-fit" style={{ background: style.bg, color: style.color }}>{CLASS_LABEL[cls]}</span>
+                      <span style={{ color: "var(--text-muted)" }}>{expanded === f.id ? "−" : "›"}</span>
+                    </button>
+                    {expanded === f.id && (
+                      <div className="px-6 py-5" style={{ background: "#FAFBFD", borderBottom: "1px solid var(--border)" }}>
+                        {f.recovery_subject ? (
+                          <>
+                            <div className="text-sm font-semibold mb-1" style={{ color: "var(--navy)" }}>{f.recovery_subject}</div>
+                            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--text)" }}>{f.recovery_body}</p>
+                            {f.next_retry_at && (
+                              <div className="mt-3 text-xs font-medium" style={{ color: "var(--blue)" }}>
+                                Next retry: {new Date(f.next_retry_at).toDateString()}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-sm italic" style={{ color: "var(--text-muted)" }}>Awaiting classification…</span>
                         )}
-                      </>
-                    ) : (
-                      <span className="text-sm italic" style={{ color: "#8A7B5C" }}>awaiting classification…</span>
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function Stat({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="px-6 py-5 border-r border-white/10 last:border-r-0">
-      <div className="font-mono text-2xl md:text-3xl font-medium" style={{ color }}>{value}</div>
-      <div className="text-[10px] tracking-widest text-[#6B7873] mt-1">{label}</div>
+                );
+              })
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

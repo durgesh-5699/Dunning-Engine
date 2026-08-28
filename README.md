@@ -134,3 +134,14 @@ This exercises the exact same code path a real Razorpay webhook would — signat
 - Connect to a live Razorpay subscription webhook (currently simulated via signed curl requests due to test-mode checkout flakiness)
 - Dead-letter queue + exponential backoff for message-processing failures (pattern already proven in an earlier project, deliberately deferred here for scope)
 - WhatsApp delivery channel for recovery messages, alongside email
+
+### Note on live webhook integration
+Attempted full integration twice with independent subscriptions:
+fresh Razorpay test account, eMandate authentication (both payments
+succeeded through Razorpay's own checkout flow), ngrok tunnel, and
+webhook registration. In both cases, the subscription's `auth_attempts`
+and `paid_count` remained at 0 at the API level despite a completed
+payment — a reproducible platform-side inconsistency in this account's
+test-mode subscription activation, outside our control. Reverted to a
+signed-request simulator (`send-test-failure.js`) that exercises the
+identical code path, including real HMAC signature verification.
