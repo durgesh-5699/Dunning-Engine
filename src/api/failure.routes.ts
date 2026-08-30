@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { pool } from "../db/client";
+import { pool } from "../db/client.js";
 
 export const failuresRouter = Router();
 

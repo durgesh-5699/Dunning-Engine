@@ -30,7 +30,7 @@ export function computeNextRetry(classification: Classification, retryCount: num
 
     case "soft_decline": {
       const delays = [1, 3, 7]; 
-      const days = delays[Math.min(retryCount, delays.length - 1)];
+      const days = Number(delays[Math.min(retryCount, delays.length - 1)]);
       return new Date(now + days * 24 * 60 * 60 * 1000);
     }
 
