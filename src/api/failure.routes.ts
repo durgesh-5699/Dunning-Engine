@@ -23,7 +23,7 @@ failuresRouter.get("/failures", async (req, res) => {
   res.json(rows);
 });
 
-const AMOUNT_PRESETS_PAISE = [19900, 29900, 49900, 79900, 99900, 149900]; // ₹199 to ₹1499
+const AMOUNT_PRESETS_PAISE = [19900, 29900, 49900, 79900, 99900, 149900]; 
 
 failuresRouter.post("/simulate", async (req, res) => {
   const preset = REASON_PRESETS[Math.floor(Math.random() * REASON_PRESETS.length)];
