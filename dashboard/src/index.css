@@ -2,21 +2,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Base palette — deep ledger navy + electric blue + a restrained gold for money/urgency */
   --navy: #0A1330;
   --navy-deep: #060B1C;
-  --navy-soft: #14224A;
+  --navy-soft: #16244E;
   --blue: #2E6BFF;
-  --blue-soft: #6FA0FF;
-  --gold: #C9971F;
-  --gold-soft: #F0D896;
+  --blue-soft: #8FB4FF;
+  --violet: #7C5CFF;
+  --gold: #D9A62B;
+  --gold-soft: #F3DFA0;
 
-  --bg: #EEF1F8;
+  --bg: #E8ECF6;
   --paper: #FFFFFF;
   --border: #E1E6F0;
   --border-soft: rgba(20, 34, 74, 0.08);
   --text: #1B2440;
-  --text-muted: #6B7590;
+  --text-muted: #666F8E;
   --text-faint: #9AA2BC;
 
   --success: #128A67;
@@ -29,32 +29,89 @@
   --font-display: 'Space Grotesk', 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
 
+  /* neumorphic-glass duo shadow: soft light catch + deep ambient drop */
   --shadow-card:
-    0 1px 1px rgba(20, 34, 74, 0.03),
-    0 10px 30px -14px rgba(20, 34, 74, 0.16);
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 -12px 24px -18px rgba(20, 34, 74, 0.08) inset,
+    0 14px 34px -16px rgba(20, 34, 74, 0.22);
   --shadow-card-hover:
-    0 1px 1px rgba(20, 34, 74, 0.04),
-    0 18px 40px -16px rgba(20, 34, 74, 0.22);
-  --shadow-raised: 0 24px 60px -24px rgba(6, 11, 28, 0.45);
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 -12px 24px -18px rgba(20, 34, 74, 0.10) inset,
+    0 26px 50px -18px rgba(20, 34, 74, 0.30);
+  --shadow-raised: 0 30px 70px -24px rgba(6, 11, 28, 0.55);
+  --shadow-neu-icon:
+    inset 1px 1px 2px rgba(255, 255, 255, 0.65),
+    inset -2px -2px 5px rgba(20, 34, 74, 0.10),
+    0 6px 14px -8px rgba(20, 34, 74, 0.35);
 }
 
 * { box-sizing: border-box; }
 
+html { background: var(--bg); }
+
 body {
   font-family: var(--font-body);
-  background: var(--bg);
+  background: transparent;
   margin: 0;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- Ambient backdrop ---------- */
-.bg-grid {
-  position: relative;
+/* ================= Aurora backdrop =================
+   Fixed, blurred color fields that live *behind* every glass
+   surface. This is what makes the frosted panels read as glass
+   rather than flat white cards with a blur filter slapped on —
+   there has to be something colorful underneath to refract. */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora::after {
+  content: "";
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(720px 420px at 14% -6%, rgba(46, 107, 255, 0.10), transparent 60%),
-    radial-gradient(600px 380px at 100% 8%, rgba(201, 151, 31, 0.08), transparent 55%),
-    var(--bg);
+    linear-gradient(180deg, rgba(232, 236, 246, 0.15), rgba(232, 236, 246, 0.65) 40%, var(--bg) 75%);
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.45;
+  will-change: transform;
+}
+.aurora-blue {
+  width: 560px; height: 560px;
+  top: -160px; left: -120px;
+  background: radial-gradient(circle at 35% 35%, var(--blue), transparent 68%);
+  animation: driftA 24s ease-in-out infinite;
+}
+.aurora-gold {
+  width: 460px; height: 460px;
+  bottom: -140px; right: -60px;
+  background: radial-gradient(circle at 60% 40%, var(--gold), transparent 68%);
+  animation: driftB 28s ease-in-out infinite;
+}
+.aurora-violet {
+  width: 420px; height: 420px;
+  top: 22%; right: 12%;
+  background: radial-gradient(circle at 50% 50%, var(--violet), transparent 68%);
+  animation: driftC 32s ease-in-out infinite;
+}
+@keyframes driftA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(70px, 50px) scale(1.08); } }
+@keyframes driftB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-60px, -40px) scale(1.05); } }
+@keyframes driftC { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px, 60px) scale(0.95); } }
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob { animation: none; }
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  background: rgba(232, 236, 246, 0.4);
 }
 
 /* ---------- Typography ---------- */
@@ -63,70 +120,88 @@ h1, h2, h3, .num-display {
   letter-spacing: -0.01em;
 }
 
-/* ---------- Cards ---------- */
+/* ---------- Glass cards ---------- */
 .card {
-  background: var(--paper);
-  border-radius: 18px;
-  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.64);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
   box-shadow: var(--shadow-card);
 }
 
 .glow-card {
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .glow-card:hover {
   box-shadow: var(--shadow-card-hover);
-  border-color: rgba(46, 107, 255, 0.18);
+  border-color: rgba(46, 107, 255, 0.25);
 }
-.glow-card::before {
+
+/* ---------- 3D tilt + glare ----------
+   The wrapping element gets its rotateX/rotateY written directly
+   by framer-motion (via inline transform), so this pseudo just
+   paints a moving specular highlight that tracks the same pointer
+   position (--mx / --my), giving the glass an actual sheen instead
+   of a flat hover-darken. */
+.tilt-glare {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.tilt-glare::before {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(46, 107, 255, 0.06), transparent 55%);
+  border-radius: inherit;
+  background: radial-gradient(480px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.55), transparent 45%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
   pointer-events: none;
+  mix-blend-mode: overlay;
 }
-.glow-card:hover::before { opacity: 1; }
+.tilt-glare:hover::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .tilt-glare { transform: none !important; }
+}
 
-/* Hero stat — the one deliberate signature moment: the money at risk, framed like a
-   ledger balance behind glass, with a slow-breathing gold seam instead of a shouty badge. */
+/* Hero stat — Amount at risk. The one deliberate signature moment:
+   a dark ledger-glass slab with a slow gold seam and a genuine
+   parallax float on the icon (translateZ via transform-style). */
 .hero-stat {
-  background: linear-gradient(155deg, var(--navy) 0%, var(--navy-deep) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(155deg, rgba(10, 19, 48, 0.92) 0%, rgba(6, 11, 28, 0.96) 100%);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: white;
-  position: relative;
   isolation: isolate;
 }
-.hero-stat::before {
+.hero-stat::after {
   content: "";
   position: absolute;
   inset: -1px;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 1px;
-  background: conic-gradient(from 180deg, transparent 0%, var(--gold-soft) 8%, transparent 22%);
+  background: conic-gradient(from 180deg, transparent 0%, var(--gold-soft) 8%, transparent 24%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: seam-sweep 6s linear infinite;
+  animation: seam-sweep 7s linear infinite;
   opacity: 0.9;
   z-index: -1;
+  pointer-events: none;
 }
-@keyframes seam-sweep {
-  to { transform: rotate(360deg); }
-}
+@keyframes seam-sweep { to { transform: rotate(360deg); } }
 .hero-stat .stat-icon {
-  background: rgba(201, 151, 31, 0.16) !important;
+  background: rgba(217, 166, 43, 0.18) !important;
   color: var(--gold-soft) !important;
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.12), 0 8px 18px -8px rgba(217, 166, 43, 0.5);
 }
 .hero-stat .hero-value { color: #FFFFFF; }
 .hero-stat .hero-label { color: rgba(255, 255, 255, 0.55); }
-
 @media (prefers-reduced-motion: reduce) {
-  .hero-stat::before { animation: none; }
+  .hero-stat::after { animation: none; }
 }
 
 /* ---------- Pills / badges ---------- */
@@ -155,7 +230,7 @@ h1, h2, h3, .num-display {
   transition: background 0.15s ease, padding-left 0.15s ease;
 }
 .table-row:hover {
-  background: linear-gradient(90deg, rgba(46, 107, 255, 0.05), transparent 70%);
+  background: linear-gradient(90deg, rgba(46, 107, 255, 0.06), transparent 70%);
   padding-left: 20px;
 }
 .table-row:last-child { border-bottom: none; }
@@ -165,17 +240,20 @@ h1, h2, h3, .num-display {
   .table-row:hover { padding-left: 28px; }
 }
 
-/* ---------- Stat icon ---------- */
+/* ---------- Stat icon: neumorphic bevel ---------- */
 .stat-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   font-weight: 700;
+  box-shadow: var(--shadow-neu-icon);
+  transition: transform 0.25s ease;
 }
+.glow-card:hover .stat-icon { transform: translateY(-2px) scale(1.04); }
 
 /* ---------- Skeleton loading ---------- */
 @keyframes shimmer {
@@ -189,35 +267,72 @@ h1, h2, h3, .num-display {
   border-radius: 8px;
 }
 
-/* ---------- Nav ---------- */
+/* ---------- Sidebar: frosted dark glass + neumorphic nav pill ---------- */
+.sidebar-glass {
+  background: rgba(6, 11, 28, 0.78);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+.sidebar-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(320px 260px at 0% 0%, rgba(46, 107, 255, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
 .nav-item {
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
   cursor: pointer;
 }
 .nav-item:hover:not(.nav-active) {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.9) !important;
 }
+.nav-active-pill {
+  background: linear-gradient(155deg, rgba(46, 107, 255, 0.22), rgba(124, 92, 255, 0.12));
+  box-shadow:
+    inset 1px 1px 1px rgba(255, 255, 255, 0.12),
+    inset -2px -2px 6px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(217, 166, 43, 0.35);
+}
 
 /* ---------- Search input ---------- */
 input.search-input {
-  background: rgba(20, 34, 74, 0.03);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 input.search-input:focus {
   outline: none;
   background: white;
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(46, 107, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(46, 107, 255, 0.14);
+}
+
+/* ---------- Header glass ---------- */
+.header-glass {
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 /* ---------- Drawer & overlay ---------- */
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 11, 28, 0.35);
-  backdrop-filter: blur(3px);
+  background: rgba(6, 11, 28, 0.4);
+  backdrop-filter: blur(4px);
   z-index: 40;
+}
+.drawer-glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .toast {
@@ -248,7 +363,7 @@ input.search-input:focus {
   font-family: var(--font-display);
   color: white;
   flex-shrink: 0;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 4px 10px -4px rgba(20, 34, 74, 0.4);
 }
 
 /* ---------- Timeline ---------- */
@@ -261,7 +376,7 @@ input.search-input:focus {
   justify-content: center;
   flex-shrink: 0;
   z-index: 1;
-  box-shadow: 0 0 0 3px var(--paper);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 2px 6px -2px rgba(20, 34, 74, 0.3);
 }
 .timeline-line {
   position: absolute;
@@ -271,26 +386,12 @@ input.search-input:focus {
   width: 2px;
 }
 
-/* ---------- Sidebar glass ---------- */
-.sidebar-glass {
-  background:
-    linear-gradient(185deg, rgba(255, 255, 255, 0.05), transparent 40%),
-    var(--navy);
-  position: relative;
-}
-.sidebar-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(280px 220px at 0% 0%, rgba(46, 107, 255, 0.20), transparent 70%);
-  pointer-events: none;
-}
-
 /* ---------- Buttons ---------- */
 .btn-primary {
-  background: var(--navy);
+  background: linear-gradient(160deg, var(--navy-soft), var(--navy));
   color: white;
-  transition: background 0.18s ease, transform 0.12s ease;
+  box-shadow: 0 10px 24px -12px rgba(10, 19, 48, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
-.btn-primary:hover { background: var(--navy-soft); }
-.btn-primary:active { transform: scale(0.97); }
+.btn-primary:hover { filter: brightness(1.12); box-shadow: 0 14px 30px -12px rgba(10, 19, 48, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.16); }
+.btn-primary:active { transform: scale(0.96); }
