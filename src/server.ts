@@ -4,7 +4,7 @@ import cors from "cors"
 import razorpayWebhookRouter from "./webhooks/razorpay.routes.ts";
 import { failuresRouter } from "./api/failure.routes.ts";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const app = express();
 
 app.use(cors())
