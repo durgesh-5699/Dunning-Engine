@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
+import * as THREE from "three";
 import {
   AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer,
   Legend, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -113,6 +114,376 @@ function TiltCard({
       {children}
     </motion.div>
   );
+}
+
+function roundedCardShape(width: number, height: number, radius: number) {
+  const shape = new THREE.Shape();
+  const x = -width / 2;
+  const y = -height / 2;
+  shape.moveTo(x + radius, y);
+  shape.lineTo(x + width - radius, y);
+  shape.quadraticCurveTo(x + width, y, x + width, y + radius);
+  shape.lineTo(x + width, y + height - radius);
+  shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  shape.lineTo(x + radius, y + height);
+  shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+  shape.lineTo(x, y + radius);
+  shape.quadraticCurveTo(x, y, x + radius, y);
+  return shape;
+}
+
+function textSprite(text: string, color: string, background: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 640;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (!context) return new THREE.Sprite();
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = background;
+  context.roundRect(4, 14, canvas.width - 8, 100, 22);
+  context.fill();
+  context.font = "700 34px Inter, Arial, sans-serif";
+  context.fillStyle = color;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, canvas.width / 2, canvas.height / 2 + 2);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }));
+  sprite.scale.set(1.25, 0.25, 1);
+  return sprite;
+}
+
+function EngineScene() {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+    camera.position.set(0, 0.15, 6.1);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setClearColor(0x000000, 0);
+    mount.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    group.rotation.set(0.12, -0.22, -0.08);
+    scene.add(group);
+    const baseRotation = { x: 0.12, y: -0.22, z: -0.08 };
+
+    const ambient = new THREE.AmbientLight(0x9db5ff, 2.2);
+    const keyLight = new THREE.PointLight(0x6f8cff, 15, 12);
+    keyLight.position.set(3, 3, 4);
+    const goldLight = new THREE.PointLight(0xf2bd57, 10, 9);
+    goldLight.position.set(-3, -2, 2);
+    scene.add(ambient, keyLight, goldLight);
+
+    const card = new THREE.Group();
+    card.rotation.set(-0.16, 0.36, -0.12);
+    const cardGeometry = new THREE.ExtrudeGeometry(roundedCardShape(2.7, 1.68, 0.2), {
+      depth: 0.12,
+      bevelEnabled: true,
+      bevelSegments: 4,
+      bevelSize: 0.045,
+      bevelThickness: 0.04,
+    });
+    const cardMesh = new THREE.Mesh(
+      cardGeometry,
+      new THREE.MeshPhysicalMaterial({
+        color: 0x506cff,
+        emissive: 0x17266e,
+        emissiveIntensity: 0.8,
+        metalness: 0.52,
+        roughness: 0.2,
+        clearcoat: 1,
+        clearcoatRoughness: 0.1,
+      }),
+    );
+    card.add(cardMesh);
+
+    const cardOutline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(cardGeometry),
+      new THREE.LineBasicMaterial({ color: 0xdbe4ff, transparent: true, opacity: 0.72 }),
+    );
+    cardOutline.scale.setScalar(1.012);
+    card.add(cardOutline);
+
+    const chip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.32, 0.045),
+      new THREE.MeshStandardMaterial({ color: 0xf6d27a, metalness: 0.82, roughness: 0.24, emissive: 0x8d5d1a, emissiveIntensity: 0.32 }),
+    );
+    chip.position.set(-0.78, 0.2, 0.12);
+    chip.rotation.z = -0.04;
+    card.add(chip);
+
+    const chipLineMaterial = new THREE.LineBasicMaterial({ color: 0x8e651f, transparent: true, opacity: 0.8 });
+    [-0.07, 0.07].forEach((offset) => {
+      const points = [new THREE.Vector3(-0.78 + offset, 0.045, 0.15), new THREE.Vector3(-0.78 + offset, 0.35, 0.15)];
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), chipLineMaterial);
+      card.add(line);
+    });
+
+    const contactless = new THREE.Group();
+    [0.09, 0.17, 0.25].forEach((radius) => {
+      const arc = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, 0.012, 8, 32, Math.PI * 0.62),
+        new THREE.MeshBasicMaterial({ color: 0xdbe4ff, transparent: true, opacity: 0.8 }),
+      );
+      arc.rotation.z = -Math.PI / 2;
+      arc.position.set(0.82, 0.13, 0.14);
+      contactless.add(arc);
+    });
+    card.add(contactless);
+
+    const cardStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(1.95, 0.09, 0.018),
+      new THREE.MeshBasicMaterial({ color: 0x263a9c, transparent: true, opacity: 0.8 }),
+    );
+    cardStripe.position.set(0.18, -0.35, 0.125);
+    card.add(cardStripe);
+
+    const paymentMark = new THREE.Mesh(
+      new THREE.CircleGeometry(0.2, 32),
+      new THREE.MeshBasicMaterial({ color: 0x6ff0bb, transparent: true, opacity: 0.9 }),
+    );
+    paymentMark.position.set(0.94, -0.56, 0.15);
+    card.add(paymentMark);
+    const paymentLabel = textSprite("PAYMENT EVENT", "#dce6ff", "rgba(14, 28, 97, 0.28)");
+    paymentLabel.position.set(-0.05, 0.64, 0.16);
+    paymentLabel.scale.set(0.92, 0.17, 1);
+    card.add(paymentLabel);
+    const paymentAmount = textSprite("₹ 2,499", "#fff2b1", "rgba(255, 255, 255, 0.1)");
+    paymentAmount.position.set(-0.18, -0.58, 0.16);
+    paymentAmount.scale.set(0.68, 0.15, 1);
+    card.add(paymentAmount);
+    group.add(card);
+    const core = card;
+    const wire = cardOutline;
+
+    const makeStatusTile = (label: string, amount: string, color: number, x: number, y: number) => {
+      const tile = new THREE.Group();
+      const geometry = new THREE.ExtrudeGeometry(roundedCardShape(1.5, 0.82, 0.12), {
+        depth: 0.08,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        bevelSize: 0.025,
+        bevelThickness: 0.025,
+      });
+      const body = new THREE.Mesh(
+        geometry,
+        new THREE.MeshPhysicalMaterial({
+          color,
+          emissive: color,
+          emissiveIntensity: 0.24,
+          metalness: 0.35,
+          roughness: 0.22,
+          clearcoat: 1,
+        }),
+      );
+      tile.add(body);
+      const labelSprite = textSprite(label, "#ffffff", "rgba(8, 15, 45, 0.28)");
+      labelSprite.position.set(0, 0.16, 0.12);
+      labelSprite.scale.set(1.05, 0.2, 1);
+      tile.add(labelSprite);
+      const amountSprite = textSprite(amount, "#ffffff", "rgba(255, 255, 255, 0.12)");
+      amountSprite.position.set(0, -0.16, 0.12);
+      amountSprite.scale.set(0.75, 0.16, 1);
+      tile.add(amountSprite);
+      tile.position.set(x, y, 0.25);
+      return tile;
+    };
+
+    const failedTile = makeStatusTile("PAYMENT FAILED", "WEBHOOK EVENT", 0xb83f5b, -1.72, 0.74);
+    failedTile.rotation.set(0.06, 0.18, 0.08);
+    const classifierTile = makeStatusTile("FAILURE CLASSIFIED", "HARD / SOFT / TECH", 0x536bdb, 0, 1.48);
+    classifierTile.scale.setScalar(0.7);
+    classifierTile.rotation.set(-0.08, 0.02, -0.02);
+    const recoveredTile = makeStatusTile("RECOVERY READY", "RETRY + MESSAGE", 0x168b79, 1.72, -0.72);
+    recoveredTile.rotation.set(-0.06, -0.18, -0.08);
+    group.add(failedTile, classifierTile, recoveredTile);
+
+    const failurePath = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-1.05, 0.56, 0.3),
+      new THREE.Vector3(-0.55, 0.42, 0.4),
+      new THREE.Vector3(-0.25, 0.18, 0.36),
+    ]);
+    const recoveryPath = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.28, -0.16, 0.36),
+      new THREE.Vector3(0.75, -0.4, 0.45),
+      new THREE.Vector3(1.12, -0.58, 0.38),
+    ]);
+    const failureTube = new THREE.Mesh(
+      new THREE.TubeGeometry(failurePath, 48, 0.018, 6, false),
+      new THREE.MeshBasicMaterial({ color: 0xf39a69, transparent: true, opacity: 0.9 }),
+    );
+    const recoveryTube = new THREE.Mesh(
+      new THREE.TubeGeometry(recoveryPath, 48, 0.022, 6, false),
+      new THREE.MeshBasicMaterial({ color: 0x71f4bb, transparent: true, opacity: 0.95 }),
+    );
+    group.add(failureTube, recoveryTube);
+
+    const scanBeam = new THREE.Mesh(
+      new THREE.BoxGeometry(0.025, 1.35, 0.035),
+      new THREE.MeshBasicMaterial({ color: 0x8de6ff, transparent: true, opacity: 0.85 }),
+    );
+    scanBeam.position.set(-1.2, 0, 0.2);
+    scanBeam.rotation.z = -0.16;
+    group.add(scanBeam);
+
+    const coin = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 0.42, 0.13, 48),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xf1c45d,
+        emissive: 0x8e5d18,
+        emissiveIntensity: 0.6,
+        metalness: 0.85,
+        roughness: 0.2,
+        clearcoat: 1,
+      }),
+    );
+    coin.rotation.set(0.58, 0.22, -0.2);
+    coin.position.set(1.25, 0.9, 0.18);
+    group.add(coin);
+
+    const successOrb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.14, 20, 20),
+      new THREE.MeshStandardMaterial({ color: 0x73f2b7, emissive: 0x24ad79, emissiveIntensity: 1.8 }),
+    );
+    successOrb.position.set(-1.3, -0.9, 0.22);
+    group.add(successOrb);
+
+    const rings: THREE.Mesh[] = [];
+    [
+      { radius: 1.75, tube: 0.012, color: 0x92aaff, rotation: [0.9, 0.12, 0.35] },
+      { radius: 2.05, tube: 0.018, color: 0xf0c45f, rotation: [1.7, 0.2, -0.55] },
+      { radius: 1.5, tube: 0.009, color: 0xa88dff, rotation: [0.15, 1.2, 0.15] },
+    ].forEach(({ radius, tube, color, rotation }) => {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, tube, 10, 128),
+        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.82 }),
+      );
+      ring.rotation.set(rotation[0], rotation[1], rotation[2]);
+      group.add(ring);
+      rings.push(ring);
+    });
+
+    const satellites: { mesh: THREE.Mesh; radius: number; speed: number; offset: number; y: number }[] = [];
+    [
+      { radius: 1.78, speed: 0.72, offset: 0.2, y: 0.08, color: 0xeff4ff, size: 0.1 },
+      { radius: 2.06, speed: -0.48, offset: 2.2, y: -0.2, color: 0xf5d77f, size: 0.075 },
+      { radius: 1.52, speed: 1.02, offset: 4.3, y: 0.24, color: 0xb9a8ff, size: 0.065 },
+    ].forEach(({ radius, speed, offset, y, color, size }) => {
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(size, 16, 16),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2.5, metalness: 0.4, roughness: 0.18 }),
+      );
+      group.add(mesh);
+      satellites.push({ mesh, radius, speed, offset, y });
+    });
+
+    const starPositions = new Float32Array(240 * 3);
+    for (let i = 0; i < starPositions.length; i += 3) {
+      starPositions[i] = (Math.random() - 0.5) * 8;
+      starPositions[i + 1] = (Math.random() - 0.5) * 5;
+      starPositions[i + 2] = (Math.random() - 0.5) * 3 - 1;
+    }
+    const starsGeometry = new THREE.BufferGeometry();
+    starsGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+    const stars = new THREE.Points(
+      starsGeometry,
+      new THREE.PointsMaterial({ color: 0xb9c8ff, size: 0.018, transparent: true, opacity: 0.65 }),
+    );
+    scene.add(stars);
+
+    const pointer = { x: 0, y: 0 };
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = mount.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+      pointer.y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+    };
+    mount.addEventListener("pointermove", onPointerMove);
+
+    const resize = () => {
+      const { width, height } = mount.getBoundingClientRect();
+      if (!width || !height) return;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(mount);
+    resize();
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    const clock = new THREE.Clock();
+    const animate = () => {
+      const elapsed = clock.getElapsedTime();
+      // Keep the WebGL loop alive even when reduced-motion is enabled.
+      // It runs slower there instead of freezing on the first frame.
+      const time = elapsed * (reducedMotion ? 0.35 : 1);
+      core.rotation.x = time * 0.5;
+      core.rotation.y = time * 0.82;
+      core.rotation.z = time * 0.22;
+      const pulse = 1 + Math.sin(time * 2.4) * 0.045;
+      core.scale.setScalar(pulse);
+      wire.rotation.x = -time * 0.34;
+      wire.rotation.y = time * 0.58;
+      group.rotation.x = baseRotation.x + pointer.y * 0.22 + Math.sin(time * 0.7) * 0.06;
+      group.rotation.y = baseRotation.y + pointer.x * 0.3 + time * 0.13;
+      group.rotation.z = baseRotation.z + Math.cos(time * 0.52) * 0.05;
+      rings[0].rotation.x = 0.9 + Math.sin(time * 0.4) * 0.12;
+      rings[0].rotation.z = 0.35 + time * 0.72;
+      rings[1].rotation.y = 0.2 + Math.cos(time * 0.5) * 0.16;
+      rings[1].rotation.z = -0.55 - time * 0.52;
+      rings[2].rotation.x = 0.15 + Math.sin(time * 0.6) * 0.22;
+      rings[2].rotation.y = 1.2 + time * 0.64;
+      keyLight.position.x = 3 + Math.sin(time * 0.8) * 0.8;
+      goldLight.position.y = -2 + Math.cos(time * 0.65) * 0.6;
+      coin.rotation.y = time * 0.72;
+      coin.rotation.z = -0.2 + Math.sin(time * 0.8) * 0.12;
+      coin.position.y = 0.9 + Math.sin(time * 1.3) * 0.1;
+      successOrb.scale.setScalar(1 + Math.sin(time * 2.1) * 0.18);
+      successOrb.position.z = 0.22 + Math.sin(time * 1.4) * 0.08;
+      failedTile.position.y = 0.74 + Math.sin(time * 1.2) * 0.08;
+      failedTile.rotation.z = 0.08 + Math.sin(time * 0.75) * 0.035;
+      classifierTile.position.y = 1.48 + Math.sin(time * 1.05 + 0.8) * 0.06;
+      classifierTile.rotation.y = Math.sin(time * 0.6) * 0.04;
+      recoveredTile.position.y = -0.72 + Math.sin(time * 1.1 + 1.5) * 0.08;
+      recoveredTile.rotation.z = -0.08 + Math.cos(time * 0.7) * 0.035;
+      scanBeam.position.x = -1.2 + ((time * 0.9) % 2.4);
+      satellites.forEach(({ mesh, radius, speed, offset, y }) => {
+        const angle = time * speed + offset;
+        mesh.position.set(Math.cos(angle) * radius, y + Math.sin(angle * 1.7) * 0.12, Math.sin(angle) * radius);
+      });
+      stars.rotation.y = time * 0.012;
+      renderer.render(scene, camera);
+      frame = requestAnimationFrame(animate);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      mount.removeEventListener("pointermove", onPointerMove);
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
+          object.geometry.dispose();
+          if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose());
+          else object.material.dispose();
+        }
+      });
+      renderer.dispose();
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+    };
+  }, []);
+
+  return <div ref={mountRef} className="engine-scene" />;
 }
 
 function SkeletonRow() {
@@ -372,6 +743,11 @@ export default function App() {
         <span className="aurora-blob aurora-blue" />
         <span className="aurora-blob aurora-gold" />
         <span className="aurora-blob aurora-violet" />
+        <span className="scene-grid" />
+        <span className="scene-particle particle-one" />
+        <span className="scene-particle particle-two" />
+        <span className="scene-particle particle-three" />
+        <span className="scene-particle particle-four" />
       </div>
 
       <div className="min-h-screen flex app-shell">
@@ -410,11 +786,6 @@ export default function App() {
                   <input className="search-input text-sm pl-8 pr-3 py-1.5 rounded-lg border w-48" style={{ borderColor: "var(--border)" }}
                     placeholder="Search payment ID…" value={search} onChange={(e) => { setSearch(e.target.value); setTab("failures"); setPage(1); }} />
                 </div>
-                <button onClick={simulateFailure} disabled={simulating}
-                  className="btn-primary text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0"
-                  style={{ opacity: simulating ? 0.6 : 1 }}>
-                  <Zap size={13} /> <span className="hidden sm:inline">{simulating ? "Simulating…" : "Simulate Failure"}</span>
-                </button>
               </div>
             </div>
           </header>
@@ -427,6 +798,42 @@ export default function App() {
           </div>
 
           <main className="px-4 sm:px-8 py-6 sm:py-8 flex-1 min-w-0">
+            {tab === "dashboard" && (
+              <motion.section
+                className="hero-banner mb-6"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+              >
+                <div className="hero-copy">
+                  <div className="eyebrow">
+                    <span className="live-pulse" />
+                    LIVE RECOVERY CONTROL
+                  </div>
+                  <h2>From payment failure<br /><span>to recovery.</span></h2>
+                  <p>
+                    Razorpay webhook → classify the failure → choose the retry path → recover revenue.
+                  </p>
+                  <div className="hero-footer">
+                    <button onClick={simulateFailure} disabled={simulating} className="hero-action">
+                      <Zap size={14} />
+                      {simulating ? "Processing event…" : "Run a live simulation"}
+                      <ChevronRight size={14} />
+                    </button>
+                    <span className="hero-sync">
+                      <Activity size={13} />
+                      {lastSync ? `Synced ${lastSync}` : "Waiting for first sync"}
+                    </span>
+                  </div>
+                </div>
+                <div className="hero-visual" aria-hidden="true">
+                  <EngineScene />
+                  <span className="hero-float hero-float-top"><CheckCircle2 size={13} /> PAYMENT VERIFIED</span>
+                  <span className="hero-float hero-float-bottom"><RefreshCw size={13} /> AUTO-RETRY</span>
+                </div>
+              </motion.section>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
               {stats.map((s, i) => (
                 <TiltCard
