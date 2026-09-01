@@ -76,11 +76,6 @@ function StatusBadge({ classification }: { classification: string | null }) {
   );
 }
 
-/* Generic pointer-driven 3D tilt wrapper. Tracks the cursor position over the
-   element, converts it into a spring-smoothed rotateX/rotateY, and exposes
-   --mx/--my custom properties so a CSS-only glare (see .tilt-glare::before)
-   can track the same point. Renders a single motion.div so it drops in
-   wherever a plain motion.div/card lived before. */
 function TiltCard({
   children, className, maxTilt = 9, ...motionProps
 }: React.PropsWithChildren<{ className?: string; maxTilt?: number } & Record<string, any>>) {
@@ -304,6 +299,7 @@ export default function App() {
   const needsAction = counts.hard_decline;
 
   const pieData = Object.entries(counts).filter(([, v]) => v > 0).map(([k, v]) => ({ name: CLASS_META[k].label, value: v, color: CLASS_META[k].color }));
+  const pieTotal = pieData.reduce((s, e) => s + e.value, 0);
 
   const trendData = useMemo(() => {
     const buckets: Record<string, number> = {};
@@ -485,6 +481,10 @@ export default function App() {
                               <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={45} outerRadius={70} paddingAngle={3}>
                                 {pieData.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
                               </Pie>
+                              <Tooltip
+                                formatter={(value: number, name: string) => [`${value} · ${pieTotal > 0 ? Math.round((value / pieTotal) * 100) : 0}%`, name]}
+                                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid var(--border)", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)" }}
+                              />
                               <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" iconSize={8}
                                 formatter={(v) => <span style={{ fontSize: 12, color: "var(--text)" }}>{v}</span>} />
                             </PieChart>

@@ -23,13 +23,12 @@
   --success-bg: #E4F6EF;
   --warning: #B07A16;
   --warning-bg: #FBF0DA;
-  --danger: #C4353F;
+  --danger: #d3242f;
   --danger-bg: #FBE9EA;
 
   --font-display: 'Space Grotesk', 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
 
-  /* neumorphic-glass duo shadow: soft light catch + deep ambient drop */
   --shadow-card:
     0 1px 0 rgba(255, 255, 255, 0.6) inset,
     0 -12px 24px -18px rgba(20, 34, 74, 0.08) inset,
@@ -57,11 +56,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ================= Aurora backdrop =================
-   Fixed, blurred color fields that live *behind* every glass
-   surface. This is what makes the frosted panels read as glass
-   rather than flat white cards with a blur filter slapped on —
-   there has to be something colorful underneath to refract. */
 .aurora {
   position: fixed;
   inset: 0;
@@ -114,13 +108,11 @@ body {
   background: rgba(232, 236, 246, 0.4);
 }
 
-/* ---------- Typography ---------- */
 h1, h2, h3, .num-display {
   font-family: var(--font-display);
   letter-spacing: -0.01em;
 }
 
-/* ---------- Glass cards ---------- */
 .card {
   background: rgba(255, 255, 255, 0.64);
   backdrop-filter: blur(22px) saturate(160%);
@@ -140,12 +132,6 @@ h1, h2, h3, .num-display {
   border-color: rgba(46, 107, 255, 0.25);
 }
 
-/* ---------- 3D tilt + glare ----------
-   The wrapping element gets its rotateX/rotateY written directly
-   by framer-motion (via inline transform), so this pseudo just
-   paints a moving specular highlight that tracks the same pointer
-   position (--mx / --my), giving the glass an actual sheen instead
-   of a flat hover-darken. */
 .tilt-glare {
   transform-style: preserve-3d;
   will-change: transform;
@@ -166,16 +152,16 @@ h1, h2, h3, .num-display {
   .tilt-glare { transform: none !important; }
 }
 
-/* Hero stat — Amount at risk. The one deliberate signature moment:
-   a dark ledger-glass slab with a slow gold seam and a genuine
-   parallax float on the icon (translateZ via transform-style). */
 .hero-stat {
-  background: linear-gradient(155deg, rgba(10, 19, 48, 0.92) 0%, rgba(6, 11, 28, 0.96) 100%);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: white;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.8) 0%, rgba(251, 233, 234, 0.7) 100%);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(196, 53, 63, 0.2);
   isolation: isolate;
+}
+.hero-stat.glow-card:hover {
+  border-color: rgba(196, 53, 63, 0.4);
+  box-shadow: var(--shadow-card-hover), 0 0 0 1px rgba(196, 53, 63, 0.12);
 }
 .hero-stat::after {
   content: "";
@@ -183,28 +169,27 @@ h1, h2, h3, .num-display {
   inset: -1px;
   border-radius: 20px;
   padding: 1px;
-  background: conic-gradient(from 180deg, transparent 0%, var(--gold-soft) 8%, transparent 24%);
+  background: conic-gradient(from 180deg, transparent 0%, var(--danger) 8%, transparent 24%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   animation: seam-sweep 7s linear infinite;
-  opacity: 0.9;
+  opacity: 0.55;
   z-index: -1;
   pointer-events: none;
 }
 @keyframes seam-sweep { to { transform: rotate(360deg); } }
 .hero-stat .stat-icon {
-  background: rgba(217, 166, 43, 0.18) !important;
-  color: var(--gold-soft) !important;
-  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.12), 0 8px 18px -8px rgba(217, 166, 43, 0.5);
+  background: rgba(196, 53, 63, 0.14) !important;
+  color: var(--danger) !important;
+  box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.7), inset -2px -2px 5px rgba(196, 53, 63, 0.12), 0 8px 18px -8px rgba(196, 53, 63, 0.4);
 }
-.hero-stat .hero-value { color: #FFFFFF; }
-.hero-stat .hero-label { color: rgba(255, 255, 255, 0.55); }
+.hero-stat .hero-value { color: var(--navy); }
+.hero-stat .hero-label { color: var(--text-muted); }
 @media (prefers-reduced-motion: reduce) {
   .hero-stat::after { animation: none; }
 }
 
-/* ---------- Pills / badges ---------- */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -215,7 +200,6 @@ h1, h2, h3, .num-display {
   letter-spacing: 0.01em;
 }
 
-/* ---------- Table rows ---------- */
 .table-row {
   display: flex;
   align-items: center;
@@ -240,7 +224,6 @@ h1, h2, h3, .num-display {
   .table-row:hover { padding-left: 28px; }
 }
 
-/* ---------- Stat icon: neumorphic bevel ---------- */
 .stat-icon {
   width: 40px;
   height: 40px;
@@ -251,11 +234,23 @@ h1, h2, h3, .num-display {
   font-size: 16px;
   font-weight: 700;
   box-shadow: var(--shadow-neu-icon);
-  transition: transform 0.25s ease;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.45s ease;
+  transform: perspective(300px) rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1);
 }
-.glow-card:hover .stat-icon { transform: translateY(-2px) scale(1.04); }
+.glow-card:hover .stat-icon {
+  transform: perspective(300px) rotateX(18deg) rotateY(-18deg) translateZ(14px) scale(1.16);
+  box-shadow:
+    inset 1px 1px 2px rgba(255, 255, 255, 0.75),
+    inset -2px -2px 6px rgba(20, 34, 74, 0.14),
+    0 16px 28px -10px rgba(20, 34, 74, 0.45);
+}
+.hero-stat.glow-card:hover .stat-icon {
+  box-shadow:
+    inset 1px 1px 2px rgba(255, 255, 255, 0.75),
+    inset -2px -2px 6px rgba(196, 53, 63, 0.18),
+    0 16px 28px -10px rgba(196, 53, 63, 0.45);
+}
 
-/* ---------- Skeleton loading ---------- */
 @keyframes shimmer {
   0% { background-position: -200px 0; }
   100% { background-position: calc(200px + 100%) 0; }
@@ -267,7 +262,6 @@ h1, h2, h3, .num-display {
   border-radius: 8px;
 }
 
-/* ---------- Sidebar: frosted dark glass + neumorphic nav pill ---------- */
 .sidebar-glass {
   background: rgba(6, 11, 28, 0.78);
   backdrop-filter: blur(28px) saturate(160%);
@@ -299,7 +293,6 @@ h1, h2, h3, .num-display {
     0 0 0 1px rgba(217, 166, 43, 0.35);
 }
 
-/* ---------- Search input ---------- */
 input.search-input {
   background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(8px);
@@ -312,7 +305,6 @@ input.search-input:focus {
   box-shadow: 0 0 0 3px rgba(46, 107, 255, 0.14);
 }
 
-/* ---------- Header glass ---------- */
 .header-glass {
   background: rgba(255, 255, 255, 0.66);
   backdrop-filter: blur(20px) saturate(160%);
@@ -320,7 +312,6 @@ input.search-input:focus {
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* ---------- Drawer & overlay ---------- */
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -350,7 +341,6 @@ input.search-input:focus {
   box-shadow: var(--shadow-raised);
 }
 
-/* ---------- Avatar ---------- */
 .avatar {
   width: 34px;
   height: 34px;
@@ -366,7 +356,6 @@ input.search-input:focus {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 4px 10px -4px rgba(20, 34, 74, 0.4);
 }
 
-/* ---------- Timeline ---------- */
 .timeline-dot {
   width: 22px;
   height: 22px;
@@ -386,7 +375,6 @@ input.search-input:focus {
   width: 2px;
 }
 
-/* ---------- Buttons ---------- */
 .btn-primary {
   background: linear-gradient(160deg, var(--navy-soft), var(--navy));
   color: white;
