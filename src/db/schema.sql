@@ -16,10 +16,12 @@ CREATE TABLE IF NOT EXISTS payment_failures (
   error_code TEXT,
   error_description TEXT,
   error_reason TEXT,
-  status TEXT DEFAULT 'received',       
-  classification TEXT,                   
+  status TEXT DEFAULT 'received',
+  classification TEXT,
   retry_count INTEGER DEFAULT 0,
   next_retry_at TIMESTAMPTZ,
+  recovery_subject TEXT,
+  recovery_body TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
