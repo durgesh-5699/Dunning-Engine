@@ -637,7 +637,7 @@ export default function App() {
 
   async function fetchFailures() {
     try {
-      const res = await fetch("http://localhost:3000/api/failures");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/failures`);
       setFailures(await res.json());
       setLastSync(new Date().toLocaleTimeString());
     } catch (err) { console.error(err); }
@@ -647,7 +647,7 @@ export default function App() {
   async function simulateFailure() {
     setSimulating(true);
     try {
-      await fetch("http://localhost:3000/api/simulate", { method: "POST" });
+      await fetch(`${import.meta.env.VITE_API_URL}/simulate`, { method: "POST" });
       setTimeout(fetchFailures, 1500);
     } catch (err) { console.error(err); }
     finally { setTimeout(() => setSimulating(false), 1500); }
@@ -751,7 +751,7 @@ export default function App() {
       </div>
 
       <div className="min-h-screen flex app-shell">
-        <aside className="hidden md:flex w-60 shrink-0 flex-col sidebar-glass">{sidebarContent}</aside>
+        <aside className="hidden md:flex w-60 shrink-0 flex-col sidebar-glass sticky top-0 h-screen overflow-y-auto">{sidebarContent}</aside>
 
         <AnimatePresence>
           {sidebarOpen && (
