@@ -889,7 +889,7 @@ export default function App() {
                                 {pieData.map((e, i) => <Cell key={i} fill={e.color} stroke="none" />)}
                               </Pie>
                               <Tooltip
-                                formatter={(value: number, name: string) => [`${value} · ${pieTotal > 0 ? Math.round((value / pieTotal) * 100) : 0}%`, name]}
+                                formatter={(value, name) => [`${value} · ${pieTotal > 0 ? Math.round((Number(value) / pieTotal) * 100) : 0}%`, name]}
                                 contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid var(--border)", background: "rgba(255,255,255,0.92)", backdropFilter: "blur(6px)" }}
                               />
                               <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" iconSize={8}
